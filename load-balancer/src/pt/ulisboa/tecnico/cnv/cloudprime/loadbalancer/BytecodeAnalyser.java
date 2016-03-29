@@ -9,7 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
 public class BytecodeAnalyser {
@@ -18,6 +20,8 @@ public class BytecodeAnalyser {
 	
 	private static Stack<int[]> _instructionTypeCounterStack = new Stack<>(),
 			                    _instructionCounterStack = new Stack<>();
+	
+	private static Map<BasicBlock, Integer> _basicBlockTable = new HashMap<>();
 	
 	private static final String CLASSNAME = "pt/ulisboa/tecnico/cnv/cloudprime/loadbalancer/BytecodeAnalyser";
 		
@@ -61,16 +65,51 @@ public class BytecodeAnalyser {
 				for (Enumeration e = ci.getRoutines().elements(); e.hasMoreElements(); ) {
 					Routine routine = (Routine) e.nextElement();
 					
-					for (Enumeration instrs = (routine.getInstructionArray()).elements(); instrs.hasMoreElements(); ) {
-						Instruction instr = (Instruction) instrs.nextElement();
-						int opcode = instr.getOpcode();
-						short opcodeType = InstructionTable.InstructionTypeTable[opcode];
-						instr.addBefore(CLASSNAME, "countInstruction", new Integer(opcode));
-						instr.addBefore(CLASSNAME, "countInstructionType", new Integer(opcodeType));
-					}
+					measureBlock(routine);
 				}
 				ci.addAfter(CLASSNAME, "printExaustive", "null");
 				File newFile = new File(out_filename);
+				newFile.getParentFile().mkdirs();
+				ci.write(out_filename);
+			}
+		}	
+	}
+
+	private static void measureBlock(Routine routine, Instruction[] instructions) {
+		for (Enumeration instrs = (routine.getInstructionArray()).elements(); instrs.hasMoreElements(); ) {
+			Instruction instr = (Instruction) instrs.nextElement();
+			int opcode = instr.getOpcode();
+			short opcodeType = InstructionTable.InstructionTypeTable[opcode];
+			instr.addBefore(CLASSNAME, "countInstruction", new Integer(opcode));
+			instr.addBefore(CLASSNAME, "countInstructionType", new Integer(opcodeType));
+		}
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public static void doTest(File in_dir, File out_dir) {
+		List<String> filelist = getFileNames(new ArrayList<String>(), in_dir.toPath());
+
+		for (String filename : filelist) {
+			if (filename.endsWith(".class")) {
+				String in_filename = in_dir.getAbsolutePath() + System.getProperty("file.separator") + filename;
+				String out_filename = out_dir.getAbsolutePath() + System.getProperty("file.separator") + filename;
+				ClassInfo ci = new ClassInfo(in_filename);
+	
+				for (Enumeration e = ci.getRoutines().elements(); e.hasMoreElements(); ) {
+                    Routine routine = (Routine) e.nextElement();
+					routine.addBefore("ICount", "mcount", new Integer(1));
+                    
+					Instruction[] instructions = routine.getInstructions();
+                    for (Enumeration b = routine.getBasicBlocks().elements(); b.hasMoreElements(); ) {
+                        BasicBlock bb = (BasicBlock) b.nextElement();
+                        Instruction instr = (Instruction)instructions[bb.getEndAddress()];
+                        
+                        bb.addBefore(CLASSNAME, "countInstruction", new Integer(opcode));
+                        bb.addBefore(CLASSNAME, "countInstructionType", new Integer(opcodeType));
+                    }
+                }
+                ci.addAfter(CLASSNAME, "printExaustive", "null");
+                File newFile = new File(out_filename);
 				newFile.getParentFile().mkdirs();
 				ci.write(out_filename);
 			}
@@ -318,7 +357,7 @@ public class BytecodeAnalyser {
 		
 	public static void main(String argv[]) {
 		argv = new String[3];
-		argv[0] = "-exaustive";
+		argv[0] = "-test";
 		argv[1] = "input";
 		argv[2] = "bin";
 	
@@ -326,6 +365,27 @@ public class BytecodeAnalyser {
 			printUsage();
 		}
 
+		if (argv[0].equals("-test")) {
+			if (argv.length != 3) {
+				printUsage();
+			}
+			
+			try {
+				File in_dir = new File(argv[1]);
+				File out_dir = new File(argv[2]);
+
+				if (in_dir.isDirectory() && out_dir.isDirectory()) {
+					doTest(in_dir, out_dir);
+				}
+				else {
+					printUsage();
+				}
+			}
+			catch (NullPointerException e) {
+				printUsage();
+			}
+		}
+		
 		if (argv[0].equals("-exaustive")) {
 			if (argv.length != 3) {
 				printUsage();
