@@ -8,6 +8,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -65,7 +66,13 @@ public class BytecodeAnalyser {
 				for (Enumeration e = ci.getRoutines().elements(); e.hasMoreElements(); ) {
 					Routine routine = (Routine) e.nextElement();
 					
-					measureBlock(routine);
+					for (Enumeration instrs = (routine.getInstructionArray()).elements(); instrs.hasMoreElements(); ) {
+						Instruction instr = (Instruction) instrs.nextElement();
+						int opcode = instr.getOpcode();
+						short opcodeType = InstructionTable.InstructionTypeTable[opcode];
+						instr.addBefore(CLASSNAME, "countInstruction", new Integer(opcode));
+						instr.addBefore(CLASSNAME, "countInstructionType", new Integer(opcodeType));
+					}
 				}
 				ci.addAfter(CLASSNAME, "printExaustive", "null");
 				File newFile = new File(out_filename);
@@ -74,20 +81,12 @@ public class BytecodeAnalyser {
 			}
 		}	
 	}
-
-	private static void measureBlock(Routine routine, Instruction[] instructions) {
-		for (Enumeration instrs = (routine.getInstructionArray()).elements(); instrs.hasMoreElements(); ) {
-			Instruction instr = (Instruction) instrs.nextElement();
-			int opcode = instr.getOpcode();
-			short opcodeType = InstructionTable.InstructionTypeTable[opcode];
-			instr.addBefore(CLASSNAME, "countInstruction", new Integer(opcode));
-			instr.addBefore(CLASSNAME, "countInstructionType", new Integer(opcodeType));
-		}
-	}
 	
 	@SuppressWarnings("rawtypes")
 	public static void doTest(File in_dir, File out_dir) {
 		List<String> filelist = getFileNames(new ArrayList<String>(), in_dir.toPath());
+		int numberOfMetrics = 10;
+		int[] localMetrics = new int[numberOfMetrics];
 
 		for (String filename : filelist) {
 			if (filename.endsWith(".class")) {
@@ -97,23 +96,43 @@ public class BytecodeAnalyser {
 	
 				for (Enumeration e = ci.getRoutines().elements(); e.hasMoreElements(); ) {
                     Routine routine = (Routine) e.nextElement();
-					routine.addBefore("ICount", "mcount", new Integer(1));
                     
 					Instruction[] instructions = routine.getInstructions();
                     for (Enumeration b = routine.getBasicBlocks().elements(); b.hasMoreElements(); ) {
                         BasicBlock bb = (BasicBlock) b.nextElement();
-                        Instruction instr = (Instruction)instructions[bb.getEndAddress()];
+                        List<Instruction> instructionList = Arrays.asList(instructions).subList(bb.getStartAddress(), bb.getEndAddress());
                         
-                        bb.addBefore(CLASSNAME, "countInstruction", new Integer(opcode));
-                        bb.addBefore(CLASSNAME, "countInstructionType", new Integer(opcodeType));
+                        for (Instruction instruction : instructionList) {
+    						//int opcode = instruction.getOpcode();
+    						//short opcodeType = InstructionTable.InstructionTypeTable[opcode];
+    						++localMetrics[0];
+    					}
+                        
+                        for(int index = 0; index < numberOfMetrics; ++index) {
+                        	if(localMetrics[index] > 0) {
+                        		bb.addBefore(CLASSNAME, "countInstruction" + index, new Integer(localMetrics[index]));
+                        		localMetrics[index] = 0;
+                        	}
+                        }
                     }
                 }
-                ci.addAfter(CLASSNAME, "printExaustive", "null");
+
+                ci.addAfter(CLASSNAME, "printTest", "null");
                 File newFile = new File(out_filename);
 				newFile.getParentFile().mkdirs();
 				ci.write(out_filename);
 			}
 		}	
+	}
+	
+	public static synchronized void countInstruction0(int increment) {
+		_instructionCounter[0] += increment;
+	}
+	
+	public static synchronized void printTest(String foo) {
+		System.out.println("Exaustive summary:" + System.lineSeparator() +
+				"Instruction Types:" + System.lineSeparator() +
+				" NOP_INSTRUCTION:              " + _instructionTypeCounter[0]);
 	}
 	
 	public static synchronized void printExaustive(String foo) {
