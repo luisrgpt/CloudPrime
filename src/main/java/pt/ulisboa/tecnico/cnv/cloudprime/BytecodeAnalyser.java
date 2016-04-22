@@ -33,7 +33,7 @@ public class BytecodeAnalyser {
 	@SuppressWarnings("rawtypes")
 	public static void doMetrics(File in_dir, File out_dir) {
 		String infilenames[] = in_dir.list();
-		int numberOfMetrics = 16;
+		int numberOfMetrics = 16, otherAcc = 0, twoAcc = 0, fiveAcc = 0, index;
 		int[] localMetrics = new int[numberOfMetrics];
 
 		for (String filename : infilenames) {
@@ -60,32 +60,51 @@ public class BytecodeAnalyser {
 							++localMetrics[opcodeType];
 						}
 						
-						for (int index = 0; index < 2; ++index) {
-							if (localMetrics[index] > 0) {
-								bb.addBefore(CLASSNAME, "countInstructionOther", new Integer(localMetrics[index]));
-								localMetrics[index] = 0;
-							}
+						for (index = 0; index < 2; ++index) {
+							otherAcc += localMetrics[index];
+							localMetrics[index] = 0;
 						}
 						
-						for (int index = 2; index < 4; ++index) {
-							if (localMetrics[index] > 0) {
-								bb.addBefore(CLASSNAME, "countInstruction2", new Integer(localMetrics[index]));
-								localMetrics[index] = 0;
-							}
+						for (index = 2; index < 4; ++index) {
+							twoAcc += localMetrics[index];
+							localMetrics[index] = 0;
+						}
+						
+						if (localMetrics[4] > 0) {
+							bb.addBefore(CLASSNAME, "countInstruction4", new Integer(localMetrics[index]));
+							localMetrics[4] = 0;
+						}
+						
+						for (index = 5; index < 9; ++index) {
+							fiveAcc += localMetrics[index];
+							localMetrics[index] = 0;
 						}
 
-						for (int index = 4; index < 11; ++index) {
+						for (index = 9; index < 11; ++index) {
 							if (localMetrics[index] > 0) {
 								bb.addBefore(CLASSNAME, "countInstruction" + index, new Integer(localMetrics[index]));
 								localMetrics[index] = 0;
 							}
 						}
 						
-						for (int index = 11; index < 16; ++index) {
-							if (localMetrics[index] > 0) {
-								bb.addBefore(CLASSNAME, "countInstructionOther", new Integer(localMetrics[index]));
-								localMetrics[index] = 0;
-							}
+						for (index = 11; index < 16; ++index) {
+							otherAcc += localMetrics[index];
+							localMetrics[index] = 0;
+						}
+						
+						if (otherAcc > 0) {
+							bb.addBefore(CLASSNAME, "countInstructionOther", new Integer(otherAcc));
+							otherAcc = 0;
+						}
+						
+						if (twoAcc > 0) {
+							bb.addBefore(CLASSNAME, "countInstruction2", new Integer(twoAcc));
+							twoAcc = 0;
+						}
+						
+						if (fiveAcc > 0) {
+							bb.addBefore(CLASSNAME, "countInstruction5", new Integer(fiveAcc));
+							fiveAcc = 0;
 						}
 					}
 				}
@@ -126,24 +145,6 @@ public class BytecodeAnalyser {
 		_instructionCounter.put(Thread.currentThread().getId(), integers);
 	}
 	
-	public static synchronized void countInstruction6(int increment) {
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		integers[6] += increment;
-		_instructionCounter.put(Thread.currentThread().getId(), integers);
-	}
-	
-	public static synchronized void countInstruction7(int increment) {
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		integers[7] += increment;
-		_instructionCounter.put(Thread.currentThread().getId(), integers);
-	}
-	
-	public static synchronized void countInstruction8(int increment) {
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		integers[8] += increment;
-		_instructionCounter.put(Thread.currentThread().getId(), integers);
-	}
-	
 	public static synchronized void countInstruction9(int increment) {
 		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
 		integers[9] += increment;
@@ -166,15 +167,12 @@ public class BytecodeAnalyser {
 		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
 		return "Exaustive summary:" + System.lineSeparator() +
 			"Instruction Types:" + System.lineSeparator() +
-			" STORAGE_INSTRUCTION:          " + integers[2] + System.lineSeparator() +
+			" MEMORY_INSTRUCTION:           " + integers[2] + System.lineSeparator() + //LOAD_INSTRUCTION, STORE_INSTRUCTION
 			" STACK_INSTRUCTION:            " + integers[4] + System.lineSeparator() +
-			" ARITHMETIC_INSTRUCTION:       " + integers[5] + System.lineSeparator() +
-			" LOGICAL_INSTRUCTION:          " + integers[6] + System.lineSeparator() +
-			" CONVERSION_INSTRUCTION:       " + integers[7] + System.lineSeparator() +
-			" COMPARISON_INSTRUCTION:       " + integers[8] + System.lineSeparator() +
+			" ALU_INSTRUCTION:              " + integers[5] + System.lineSeparator() + //ARITHMETIC, LOGICAL, CONVERSION, COMPARISON
 			" CONDITIONAL_INSTRUCTION:      " + integers[9] + System.lineSeparator() +
 			" UNCONDITIONAL_INSTRUCTION:    " + integers[10] + System.lineSeparator() +
-			" OTHER:                        " + integers[0] + System.lineSeparator();
+			" OTHER:                        " + integers[0]  + System.lineSeparator(); //NOP_INSTRUCTION, CONSTANT_INSTRUCTION, CLASS_INSTRUCTION, OBJECT_INSTRUCTION, EXCEPTION_INSTRUCTION, INSTRUCTIONCHECK_INSTRUCTION, MONITOR_INSTRUCTION, OTHER_INSTRCTION
 	}
 
 	public static void main(String argv[]) {
