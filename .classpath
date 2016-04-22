@@ -16,12 +16,14 @@
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
+		<accessrules>
+			<accessrule kind="accessible" pattern="com/sun/net/httpserver/**"/>
+		</accessrules>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/usr/lib64/jdk1.8.0_72/jre/lib/rt.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
