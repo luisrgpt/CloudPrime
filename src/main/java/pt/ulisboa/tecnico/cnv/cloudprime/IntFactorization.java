@@ -2,6 +2,7 @@ package pt.ulisboa.tecnico.cnv.cloudprime;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.io.IOException;
 
 public class IntFactorization {
 
@@ -9,6 +10,7 @@ public class IntFactorization {
   private BigInteger one = new BigInteger("1");
   private BigInteger divisor = new BigInteger("2");
   private ArrayList<BigInteger> factors = new ArrayList<BigInteger>();
+
 
   ArrayList<BigInteger>  calcPrimeFactors(BigInteger num) {
  
@@ -25,24 +27,25 @@ public class IntFactorization {
   }
 
 
-  public static String getResponse(String[] args) {
+  public static void main(String[] args) {
     IntFactorization obj = new IntFactorization();
     int i = 0;
-    String res = "";
 
+    System.out.println("Factoring " + args[0] + "...");
     ArrayList<BigInteger> factors = 
       obj.calcPrimeFactors(new BigInteger(args[0]));
 
-    res += "The prime factors of " + args[0] + " are ";
+    System.out.println("");
+    System.out.print("The prime factors of " + args[0] + " are ");
     for (BigInteger bi: factors) {
       i++;
-      res += bi.toString();
+      System.out.print(bi.toString());
       if (i == factors.size()) {
-        res += ".\n";
+        System.out.println(".");
       } else {
-        res += ", ";
+        System.out.print(", ");
       }
     }
-    return res;
+    System.out.println("");
   }
 }
