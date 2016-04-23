@@ -1,15 +1,11 @@
 package pt.ulisboa.tecnico.cnv.cloudprime;
 
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import BIT.highBIT.BasicBlock;
 import BIT.highBIT.ClassInfo;
@@ -18,128 +14,64 @@ import BIT.highBIT.InstructionTable;
 import BIT.highBIT.Routine;
 
 public class BytecodeAnalyser {
-	//private static Map<Long, Integer[]> _instructionCounter = new HashMap<>();
-	private static int[] _instructionTypeCounter = new int [6];
+
+	private static int _instructionTypeCounter0 = 0,
+			           _instructionTypeCounter1 = 0,
+					   _instructionTypeCounter2 = 0,
+					   _instructionTypeCounter3 = 0,
+					   _instructionTypeCounter4 = 0,
+					   _instructionTypeCounter5 = 0;
 	
 	private static final String CLASSNAME = BytecodeAnalyser.class.getName().replace(".", "/");
 
-	/*
-	public static synchronized void addThreadMetrics(int increment) {
-		// _instructionTypeCounter.put(Thread.currentThread().getId(), new
-		// Integer[17]);
-		Integer[] intergers = new Integer[16];
-		for (int index = 0; index < 16; ++index) {
-			intergers[index] = new Integer(0);
-		}
-		_instructionCounter.put(Thread.currentThread().getId(), intergers);
-		System.out.println(Thread.currentThread().getId());
-	}
-
 	public static synchronized void countInstruction2(int increment) {
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		integers[2] += increment;
-		_instructionCounter.put(Thread.currentThread().getId(), integers);
+		_instructionTypeCounter0 += increment;
 	}
 
 	public static synchronized void countInstruction4(int increment) {
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		integers[4] += increment;
-		_instructionCounter.put(Thread.currentThread().getId(), integers);
+		_instructionTypeCounter1 += increment;
 	}
 
 	public static synchronized void countInstruction5(int increment) {
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		integers[5] += increment;
-		_instructionCounter.put(Thread.currentThread().getId(), integers);
+		_instructionTypeCounter2 += increment;
 	}
 
 	public static synchronized void countInstruction9(int increment) {
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		integers[9] += increment;
-		_instructionCounter.put(Thread.currentThread().getId(), integers);
+		_instructionTypeCounter3 += increment;
 	}
 
 	public static synchronized void countInstruction10(int increment) {
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		integers[10] += increment;
-		_instructionCounter.put(Thread.currentThread().getId(), integers);
+		_instructionTypeCounter4 += increment;
 	}
 
 	public static synchronized void countInstructionOther(int increment) {
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		integers[0] += increment;
-		_instructionCounter.put(Thread.currentThread().getId(), integers);
-	}
-	
-		public static synchronized String getMetricsString() {
-		System.out.println(Thread.currentThread().getId());
-		Integer[] integers = _instructionCounter.get(Thread.currentThread().getId());
-		return "Exaustive summary:" + System.lineSeparator() +
-				"Instruction Types:" + System.lineSeparator() + 
-				" MEMORY_INSTRUCTION:           " + integers[2] + System.lineSeparator() + 		// LOAD_INSTRUCTION,
-																								// STORE_INSTRUCTION
-		        " STACK_INSTRUCTION:            " + integers[4] + System.lineSeparator() +
-		        " ALU_INSTRUCTION:              " + integers[5] + System.lineSeparator() + 		// ARITHMETIC,
-																								// LOGICAL,
-																								// CONVERSION,
-																								// COMPARISON
-				" CONDITIONAL_INSTRUCTION:      " + integers[9] + System.lineSeparator() +
-				" UNCONDITIONAL_INSTRUCTION:    " + integers[10] + System.lineSeparator() +
-				" OTHER:                        " + integers[0] + System.lineSeparator(); 		// NOP_INSTRUCTION,
-																								// CONSTANT_INSTRUCTION,
-																								// CLASS_INSTRUCTION,
-																								// OBJECT_INSTRUCTION,
-																								// EXCEPTION_INSTRUCTION,
-																								// INSTRUCTIONCHECK_INSTRUCTION,
-																								// MONITOR_INSTRUCTION,
-																								// OTHER_INSTRCTION
-	}
-	*/
-	
-	public static synchronized void countInstruction2(int increment) {
-		_instructionTypeCounter[0] += increment;
-	}
-
-	public static synchronized void countInstruction4(int increment) {
-		_instructionTypeCounter[1] += increment;
-	}
-
-	public static synchronized void countInstruction5(int increment) {
-		_instructionTypeCounter[2] += increment;
-	}
-
-	public static synchronized void countInstruction9(int increment) {
-		_instructionTypeCounter[3] += increment;
-	}
-
-	public static synchronized void countInstruction10(int increment) {
-		_instructionTypeCounter[4] += increment;
-	}
-
-	public static synchronized void countInstructionOther(int increment) {
-		_instructionTypeCounter[5] += increment;
+		_instructionTypeCounter5 += increment;
 	}
 
 	public static synchronized void printMetrics(int foo) {
-		System.err.println("Exaustive summary:" + System.lineSeparator() +
-				"Instruction Types:" + System.lineSeparator() + 
-				" MEMORY_INSTRUCTION:           " + _instructionTypeCounter[0] + System.lineSeparator() + 		// LOAD_INSTRUCTION,
-																								// STORE_INSTRUCTION
-		        " STACK_INSTRUCTION:            " + _instructionTypeCounter[1] + System.lineSeparator() +
-		        " ALU_INSTRUCTION:              " + _instructionTypeCounter[2] + System.lineSeparator() + 		// ARITHMETIC,
-																								// LOGICAL,
-																								// CONVERSION,
-																								// COMPARISON
-				" CONDITIONAL_INSTRUCTION:      " + _instructionTypeCounter[3] + System.lineSeparator() +
-				" UNCONDITIONAL_INSTRUCTION:    " + _instructionTypeCounter[4] + System.lineSeparator() +
-				" OTHER:                        " + _instructionTypeCounter[5] + System.lineSeparator()); 		// NOP_INSTRUCTION,
-																								// CONSTANT_INSTRUCTION,
-																								// CLASS_INSTRUCTION,
-																								// OBJECT_INSTRUCTION,
-																								// EXCEPTION_INSTRUCTION,
-																								// INSTRUCTIONCHECK_INSTRUCTION,
-																								// MONITOR_INSTRUCTION,
-																								// OTHER_INSTRCTION
+		System.err.println("Instruction Types:" + System.lineSeparator() + 
+				" MEMORY_INSTRUCTION:        " + _instructionTypeCounter0 + System.lineSeparator() +	// LOAD_INSTRUCTION,
+																										// STORE_INSTRUCTION
+				
+		        " STACK_INSTRUCTION:         " + _instructionTypeCounter1 + System.lineSeparator() +	// STACK_INSTRUCTION
+		        
+		        " ALU_INSTRUCTION:           " + _instructionTypeCounter2 + System.lineSeparator() +	// ARITHMETIC_INSTRUCTION,
+																										// LOGICAL_INSTRUCTION,
+																										// CONVERSION_INSTRUCTION,
+																										// COMPARISON_INSTRUCTION
+		        
+				" CONDITIONAL_INSTRUCTION:   " + _instructionTypeCounter3 + System.lineSeparator() +	// CONDITIONAL_INSTRUCTION
+				
+				" UNCONDITIONAL_INSTRUCTION: " + _instructionTypeCounter4 + System.lineSeparator() +	// UNCONDITIONAL_INSTRUCTION
+				
+				" OTHER:                     " + _instructionTypeCounter5 + System.lineSeparator());	// NOP_INSTRUCTION,
+																										// CONSTANT_INSTRUCTION,
+																										// CLASS_INSTRUCTION,
+																										// OBJECT_INSTRUCTION,
+																										// EXCEPTION_INSTRUCTION,
+																										// INSTRUCTIONCHECK_INSTRUCTION,
+																										// MONITOR_INSTRUCTION,
+																										// OTHER_INSTRCTION
 	}
 
 	@SuppressWarnings("rawtypes")
