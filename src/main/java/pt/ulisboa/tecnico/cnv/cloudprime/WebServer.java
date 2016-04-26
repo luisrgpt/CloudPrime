@@ -41,7 +41,7 @@ public class WebServer {
 	String processRequest(String query) {
 		try {
 			Process p = Runtime.getRuntime()
-					.exec("/home/miranda/bin/jdk1.7.0_80/bin/java -cp target/classes/:target/classes/pt/ulisboa/tecnico/cnv/cloudprime/ -XX:-UseSplitVerifier "
+					.exec("java -cp target/classes/:target/classes/pt/ulisboa/tecnico/cnv/cloudprime/ -XX:-UseSplitVerifier "
 							+ IntFactorization.class.getName() + " " + query.substring(2));
 			p.waitFor();
 
