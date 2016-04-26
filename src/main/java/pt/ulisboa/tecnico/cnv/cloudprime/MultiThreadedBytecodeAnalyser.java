@@ -8,6 +8,8 @@ import BIT.highBIT.Routine;
 
 final class MultiThreadedBytecodeAnalyser extends BytecodeAnalyser {
 	private static Map<Long, Integer[]> _threadedInstructionCounter = new HashMap<>();
+	//private static long[][] _alternativeThreadedInstructionCounter = new long[(int) Long.MAX_VALUE][];
+	
 	
 	@Override
 	protected String getClassname() {

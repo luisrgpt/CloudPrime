@@ -18,7 +18,7 @@ public class WebServer {
 
 	WebServer(int port) {
 		try {
-			BytecodeAnalyser.instrumentalizeClass(IntFactorization.class);
+			new MultiProcessedBytecodeAnalyser().instrumentalizeClass(IntFactorization.class);
 		} catch (IOException | InterruptedException e) {
 			System.err.println("Failed to instrument class.");
 			e.printStackTrace();
