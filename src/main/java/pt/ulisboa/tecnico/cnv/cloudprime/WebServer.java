@@ -1,8 +1,6 @@
 package pt.ulisboa.tecnico.cnv.cloudprime;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
@@ -10,21 +8,9 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-public class WebServer {
-
-	public static void main(String[] args) {
-		new WebServer(8000);
-	}
+public abstract class WebServer {
 
 	WebServer(int port) {
-		try {
-			new MultiProcessedBytecodeAnalyser().instrumentalizeClass(IntFactorization.class);
-		} catch (IOException | InterruptedException e) {
-			System.err.println("Failed to instrument class.");
-			e.printStackTrace();
-			System.exit(-1);
-		}
-
 		HttpServer server;
 		try {
 			server = HttpServer.create(new InetSocketAddress(port), 0);
@@ -37,38 +23,18 @@ public class WebServer {
 			System.exit(-1);
 		}
 	}
-
-	String processRequest(String query) {
+	
+	static void instrumentClass(BytecodeAnalyser analyser) {
 		try {
-			Process p = Runtime.getRuntime()
-					.exec("java -cp target/classes/:target/classes/pt/ulisboa/tecnico/cnv/cloudprime/ -XX:-UseSplitVerifier "
-							+ IntFactorization.class.getName() + " " + query.substring(2));
-			p.waitFor();
-
-			BufferedReader outputReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-			String outputLine = "";
-			StringBuffer outputStringBuffer = new StringBuffer();
-			while ((outputLine = outputReader.readLine()) != null) {
-				outputStringBuffer.append(outputLine + "\n");
-			}
-
-			// String response = IntFactorization.getResponse(new
-			// String[]{query.substring(2)});
-			/*
-			 * try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-			 * new FileOutputStream(query.substring(2) + ".txt"), "utf-8"))) {
-			 * writer.write(response + "\n" +
-			 * BytecodeAnalyser.getMetricsString()); }
-			 */
-			return outputStringBuffer.toString();
+			analyser.instrumentalizeClass(IntFactorization.class);
 		} catch (IOException | InterruptedException e) {
-			System.err.println(e.getMessage());
-			System.err.println("Error " + e.getClass().getName() + ". The socket might have been closed. "
-					+ "Make sure you don't close the previous request to issue a new one.");
-			return "The socket might have been closed.";
+			System.err.println("Failed to instrument class.");
+			e.printStackTrace();
+			System.exit(-1);
 		}
 	}
+
+	abstract String processRequest(String query);
 
 	private class MyHandler implements HttpHandler {
 		@Override
