@@ -7,7 +7,7 @@
 	<name>webserver</name>
 
 	<properties>
-		<project.mainClass>pt.ulisboa.tecnico.cnv.cloudprime.WebServer</project.mainClass>
+		<project.mainClass>pt.ulisboa.tecnico.cnv.cloudprime.WorkerServer</project.mainClass>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<version.java>1.7</version.java>
 		<version.exec.maven.plugin>1.4.0</version.exec.maven.plugin>
@@ -29,15 +29,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-ec2</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-s3</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-dynamodb</artifactId>
+			<artifactId>aws-java-sdk</artifactId>
+      		<version>1.10.69</version>
 		</dependency>
 	</dependencies>
 
@@ -66,7 +59,7 @@
 				</executions>
 				<configuration>
 					<mainClass>${project.mainClass}</mainClass>
-					<argLine>-XX:-UseSplitVerifier</argLine>
+					<commandlineArgs>-XX:-UseSplitVerifier</commandlineArgs>
 				</configuration>
 			</plugin>
 		</plugins>
