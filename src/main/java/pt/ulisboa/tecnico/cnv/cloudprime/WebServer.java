@@ -17,18 +17,9 @@ public abstract class WebServer {
 			server.createContext("/f.html", new MyHandler());
 			server.setExecutor(null); // creates a default executor
 			server.start();
+			System.out.println("Running. Wating for requests...");
 		} catch (IOException e) {
 			System.err.println("Failed to open socket.");
-			e.printStackTrace();
-			System.exit(-1);
-		}
-	}
-	
-	static void instrumentClass(BytecodeAnalyser analyser) {
-		try {
-			analyser.instrumentalizeClass(IntFactorization.class);
-		} catch (IOException | InterruptedException e) {
-			System.err.println("Failed to instrument class.");
 			e.printStackTrace();
 			System.exit(-1);
 		}
