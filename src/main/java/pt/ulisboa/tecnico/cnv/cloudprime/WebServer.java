@@ -17,7 +17,7 @@ public abstract class WebServer {
 			server.createContext("/f.html", new MyHandler());
 			server.setExecutor(null); // creates a default executor
 			server.start();
-			System.out.println("Running. Wating for requests...");
+			System.out.println("Running " + getClass().getSimpleName() +  ". Wating for requests...");
 		} catch (IOException e) {
 			System.err.println("Failed to open socket.");
 			e.printStackTrace();
