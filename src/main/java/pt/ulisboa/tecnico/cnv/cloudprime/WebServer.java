@@ -11,6 +11,8 @@ import com.sun.net.httpserver.HttpServer;
 public abstract class WebServer {
 
 	WebServer(int port) {
+		DynamoDB.init();
+		
 		HttpServer server;
 		try {
 			server = HttpServer.create(new InetSocketAddress(port), 0);
@@ -32,8 +34,7 @@ public abstract class WebServer {
 		public void handle(final HttpExchange t) throws IOException {
 			final String query = t.getRequestURI().getQuery();
 			final OutputStream os = t.getResponseBody();
-			if (query.charAt(0) == 'n' && query.charAt(1) == '=') {
-				// TODO: verify if query.substring(2) is a number
+			if (query.matches("^n=\\d+$")) {
 				new Thread() {
 					public void run() {
 						String outputResponse = processRequest(query);

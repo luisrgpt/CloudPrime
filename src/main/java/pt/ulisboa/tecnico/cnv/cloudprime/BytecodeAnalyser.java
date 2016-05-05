@@ -15,23 +15,16 @@ import BIT.highBIT.Routine;
 
 public class BytecodeAnalyser {
 	private static Map<Long, Long[]> _instructionTypeCounter = new HashMap<>();
+	private static Map<Long, String> _values = new HashMap<>();
 
 	private static final String CLASSNAME = BytecodeAnalyser.class.getName().replace(".", "/");
 
-	public static void printUsage() {
-		System.out.println("Syntax: java BytecodeAnalyser -stat_type in_path [out_path]");
-		System.out.println("        where stat_type can be:");
-		System.out.println("        exaustive:  instruction counter");
-		System.out.println();
-		System.out.println("        in_path:  directory from which the class files are read");
-		System.out.println("        out_path: directory to which the class files are written");
-		System.out.println("        Both in_path and out_path are required unless stat_type is static");
-		System.out.println("        in which case only in_path is required");
-		System.exit(-1);
+	static void setValue(String value) {
+		_values.put(Thread.currentThread().getId(), value);
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static void instrument() {
+	public static void main(String[] args) {
 		System.out.println("Instrumenting class...");
 		
 		int numberOfMetrics = 16, otherAcc = 0, twoAcc = 0, nineAcc = 0, tenAcc = 0, index;
@@ -45,7 +38,7 @@ public class BytecodeAnalyser {
 				Routine routine = (Routine) enumeration.nextElement();
 
 				if (routine.getMethodName().equals("getResponse")) {
-					routine.addAfter(CLASSNAME, "printMetrics", new Integer(0));
+					routine.addAfter(CLASSNAME, "storeMetrics", new Integer(0));
 					routine.addBefore(CLASSNAME, "addThreadMetrics", new Integer(0));
 				}
 
@@ -191,17 +184,7 @@ public class BytecodeAnalyser {
 		_instructionTypeCounter.put(Thread.currentThread().getId(), instructionTypeCounter);
 	}
 
-	public static synchronized void printMetrics(int foo) {
-		Long[] instructionTypeCounter = _instructionTypeCounter.get(Thread.currentThread().getId());
-		System.out.println("Instruction Types:" + System.lineSeparator() + " MEMORY_INSTRUCTION:        "
-				+ (instructionTypeCounter[0] + Long.MAX_VALUE) + System.lineSeparator() + // LOAD_INSTRUCTION,
-																							// STORE_INSTRUCTION
-
-				" CONDITIONAL_INSTRUCTION:   " + (instructionTypeCounter[1] + Long.MAX_VALUE) + System.lineSeparator() + // CONDITIONAL_INSTRUCTION
-
-				" UNCONDITIONAL_INSTRUCTION: " + (instructionTypeCounter[2] + Long.MAX_VALUE) + System.lineSeparator() + // UNCONDITIONAL_INSTRUCTION
-
-				" OTHER:                     " + (instructionTypeCounter[3] + Long.MAX_VALUE) + System.lineSeparator()); // NOP_INSTRUCTION,
+	public static synchronized void storeMetrics(int foo) {
+		DynamoDB.addMetrics(_values.get(Thread.currentThread().getId()), _instructionTypeCounter.get(Thread.currentThread().getId()));
 	}
-
 }

@@ -7,11 +7,14 @@
 	<name>webserver</name>
 
 	<properties>
-		<project.mainClass>pt.ulisboa.tecnico.cnv.cloudprime.WorkerServer</project.mainClass>
+		<project.instrument>pt.ulisboa.tecnico.cnv.cloudprime.BytecodeAnalyser</project.instrument>
+		<project.local>pt.ulisboa.tecnico.cnv.cloudprime.WorkerServer</project.local>
+		<project.aws>pt.ulisboa.tecnico.cnv.cloudprime.LoadBalancer</project.aws>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<version.java>1.7</version.java>
 		<version.exec.maven.plugin>1.4.0</version.exec.maven.plugin>
 		<version.compiler.maven.plugin>3.3</version.compiler.maven.plugin>
+		<flag>-XX:-UseSplitVerifier</flag>
 	</properties>
 
 	<dependencyManagement>
@@ -30,7 +33,7 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
-      		<version>1.10.69</version>
+			<version>1.10.69</version>
 		</dependency>
 	</dependencies>
 
@@ -52,15 +55,47 @@
 				<version>${version.exec.maven.plugin}</version>
 				<executions>
 					<execution>
-						<goals>
-							<goal>java</goal>
-						</goals>
+						<id>instrument</id>
+						<configuration>
+							<executable>java</executable>
+				          	<arguments>
+				          		<argument>-classpath</argument>
+					            <!-- automatically creates the classpath using all project dependencies,
+					                 also adding the project build directory -->
+					            <classpath/>
+				            	<argument>${project.instrument}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>local</id>
+						<configuration>
+							<executable>java</executable>
+				          	<arguments>
+				            	<argument>${flag}</argument>
+				            	<argument>-classpath</argument>
+					            <!-- automatically creates the classpath using all project dependencies,
+					                 also adding the project build directory -->
+					            <classpath/>
+				            	<argument>${project.local}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>aws</id>
+						<configuration>
+							<executable>java</executable>
+				          	<arguments>
+				            	<argument>${flag}</argument>
+				            	<argument>-classpath</argument>
+					            <!-- automatically creates the classpath using all project dependencies,
+					                 also adding the project build directory -->
+					            <classpath/>
+				            	<argument>${project.aws}</argument>
+							</arguments>
+						</configuration>
 					</execution>
 				</executions>
-				<configuration>
-					<mainClass>${project.mainClass}</mainClass>
-					<commandlineArgs>-XX:-UseSplitVerifier</commandlineArgs>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>

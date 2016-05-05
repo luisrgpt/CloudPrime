@@ -48,15 +48,15 @@ public class IntFactorization {
     System.out.println("");
   }
   
-  public static String getResponse(String[] args) {
+  public static String getResponse(String args) {
     IntFactorization obj = new IntFactorization();
     int i = 0;
     String res = "";
 
     ArrayList<BigInteger> factors = 
-      obj.calcPrimeFactors(new BigInteger(args[0]));
+      obj.calcPrimeFactors(new BigInteger(args));
 
-    res += "The prime factors of " + args[0] + " are ";
+    res += "The prime factors of " + args + " are ";
     for (BigInteger bi: factors) {
       i++;
       res += bi.toString();

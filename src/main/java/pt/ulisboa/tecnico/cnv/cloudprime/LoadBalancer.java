@@ -27,11 +27,17 @@ public class LoadBalancer extends WebServer {
 
 	@Override
 	String processRequest(String query) {
-		String urlString = "http://" + selectServer() + ":8000/f.html?" + query;
+		String urlString = "http://" + selectServer(query) + ":8000/f.html?" + query;
 		return httpGet(urlString);
 	}
 
-	private String selectServer() {
+	private String selectServer(String query) {
+		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
+		if(instructionTypeCounter == null) {
+			List<Instance> instanceList = new ArrayList<>(InstanceGroup.getInstances().values());
+			return instanceList.get(choice++ % instanceList.size()).getPublicIpAddress();
+		}
+		
 		// TODO: implement better choice. For now it's round robin
 		// TODO: if there is no server, retry after some delay
 		List<Instance> instanceList = new ArrayList<>(InstanceGroup.getInstances().values());
