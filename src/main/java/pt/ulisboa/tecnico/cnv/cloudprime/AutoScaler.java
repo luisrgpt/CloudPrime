@@ -75,8 +75,8 @@ public final class AutoScaler {
 			RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
 			// FIXME: if number > 1 needs to be used, the code below must be
 			// changed
-			Instance i = runInstancesResult.getReservation().getInstances().get(0);
-			InstanceGroup.getInstances().put(i.getInstanceId(), i);
+			// Instance i = runInstancesResult.getReservation().getInstances().get(0);
+			// ServerGroup.getServers().put(i.getInstanceId(), new Server(i));
 		} catch (AmazonServiceException ase) {
 			System.out.println("Caught Exception: " + ase.getMessage());
 			System.out.println("Reponse Status Code: " + ase.getStatusCode());
@@ -90,11 +90,10 @@ public final class AutoScaler {
 			// TODO: replace this for argument passing, the correct instance to
 			// terminate
 			instanceId = null;
-			for (Instance instance : InstanceGroup.getInstances().values()) {
-				String state = instance.getState().getName();
-				if (state.equals("running")) {
-					instanceId = instance.getInstanceId();
-					InstanceGroup.getInstances().remove(instance);
+			for (Server server : ServerGroup.getServers().values()) {
+				if (server.isHealthy()) {
+					instanceId = server.getInstanceId();
+					ServerGroup.getServers().remove(server);
 					break;
 				}
 			}
@@ -169,6 +168,6 @@ public final class AutoScaler {
 		ec2 = new AmazonEC2Client(credentials);
 		ec2.setEndpoint("ec2.us-west-2.amazonaws.com");
 
-		InstanceGroup.resetInstances();
+		ServerGroup.updateServers();
 	}
 }

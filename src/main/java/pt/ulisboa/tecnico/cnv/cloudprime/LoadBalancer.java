@@ -8,8 +8,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.amazonaws.services.ec2.model.Instance;
-
 public class LoadBalancer extends WebServer {
 	final static int LB_ENDPOINT_PORT = 8001;
 
@@ -33,15 +31,15 @@ public class LoadBalancer extends WebServer {
 
 	private String selectServer(String query) {
 		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
-		if(instructionTypeCounter == null) {
-			List<Instance> instanceList = new ArrayList<>(InstanceGroup.getInstances().values());
-			return instanceList.get(choice++ % instanceList.size()).getPublicIpAddress();
+		if (instructionTypeCounter == null) {
+			List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
+			return serverList.get(choice++ % serverList.size()).getInstanceIpAddress();
 		}
-		
+
 		// TODO: implement better choice. For now it's round robin
 		// TODO: if there is no server, retry after some delay
-		List<Instance> instanceList = new ArrayList<>(InstanceGroup.getInstances().values());
-		return instanceList.get(choice++ % instanceList.size()).getPublicIpAddress();
+		List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
+		return serverList.get(choice++ % serverList.size()).getInstanceIpAddress();
 	}
 
 	static String httpGet(String urlString) {

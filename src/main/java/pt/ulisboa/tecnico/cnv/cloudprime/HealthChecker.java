@@ -2,12 +2,10 @@ package pt.ulisboa.tecnico.cnv.cloudprime;
 
 import java.util.ArrayList;
 
-import com.amazonaws.services.ec2.model.Instance;
-
 public final class HealthChecker {
 	final static int HEALTH_CHECK_TIMEOUT = 10 * 1000;
 	final static int HEALTH_CHECK_INTERVAL = 30 * 1000;
-	// TODO: add and use grace period
+	final static int HEALTH_CHECK_GRACE_PERIOD = 90 * 1000;
 
 	ArrayList<Boolean> shouldStop = new ArrayList<>();
 
@@ -19,20 +17,14 @@ public final class HealthChecker {
 					shouldStop.clear();
 					int position = 0;
 					System.out.println("Will run health check");
-					InstanceGroup.resetInstances();
-					for (final Instance instance : InstanceGroup.getInstances().values()) {
-						String state = instance.getState().getName();
-						System.out.print(instance.getPublicIpAddress() + " (" + state + "), ");
-						if (!state.equals("running")) {
-							continue;
-						}
-						String s = instance.getPublicIpAddress();
+					ServerGroup.updateServers();
+					for (final Server server : ServerGroup.getServers().values()) {
+						String s = server.getInstanceIpAddress();
 						final int pos = position++;
 						shouldStop.add(false);
 						new CheckerThread(pos, s).start();
 						new TimerThread(pos, s).start();
 					}
-					System.out.println("");
 					try {
 						Thread.sleep(HEALTH_CHECK_INTERVAL);
 					} catch (InterruptedException e) {
