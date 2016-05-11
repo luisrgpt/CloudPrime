@@ -6,7 +6,6 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
@@ -70,13 +69,9 @@ public final class AutoScaler {
 			System.out.println("Starting a new instance.");
 			RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
 			/* configure to use your AMI, key and security group */
-			runInstancesRequest.withImageId("ami-79b24619").withInstanceType("t2.micro").withMinCount(number)
+			runInstancesRequest.withImageId("ami-b719e4d7").withInstanceType("t2.micro").withMinCount(number)
 					.withMaxCount(number).withKeyName("CNV-kp").withSecurityGroups("CNV-ssh+http");
 			RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
-			// FIXME: if number > 1 needs to be used, the code below must be
-			// changed
-			// Instance i = runInstancesResult.getReservation().getInstances().get(0);
-			// ServerGroup.getServers().put(i.getInstanceId(), new Server(i));
 		} catch (AmazonServiceException ase) {
 			System.out.println("Caught Exception: " + ase.getMessage());
 			System.out.println("Reponse Status Code: " + ase.getStatusCode());

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LoadBalancer extends WebServer {
-	final static int LB_ENDPOINT_PORT = 8001;
+	final static int LB_ENDPOINT_PORT = 80;
 
 	int choice = 0;
 
@@ -30,16 +30,17 @@ public class LoadBalancer extends WebServer {
 	}
 
 	private String selectServer(String query) {
+		// TODO: if there is no server, retry after some delay
 		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
 		if (instructionTypeCounter == null) {
+			// round robin
+			List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
+			return serverList.get(choice++ % serverList.size()).getInstanceIpAddress();
+		} else {
+			// TODO: implement better choice. For now it's round robin
 			List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
 			return serverList.get(choice++ % serverList.size()).getInstanceIpAddress();
 		}
-
-		// TODO: implement better choice. For now it's round robin
-		// TODO: if there is no server, retry after some delay
-		List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
-		return serverList.get(choice++ % serverList.size()).getInstanceIpAddress();
 	}
 
 	static String httpGet(String urlString) {
@@ -60,7 +61,7 @@ public class LoadBalancer extends WebServer {
 				return null;
 			}
 		} catch (ConnectException e) {
-			e.printStackTrace();
+			// e.printStackTrace();
 			return null;
 		} catch (Exception e) {
 			e.printStackTrace();

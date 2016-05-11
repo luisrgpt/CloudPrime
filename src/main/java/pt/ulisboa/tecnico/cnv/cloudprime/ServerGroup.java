@@ -30,7 +30,7 @@ public final class ServerGroup {
 		for (Reservation reservation : reservations) {
 			for (Instance instance : reservation.getInstances()) {
 				String state = instance.getState().getName();
-				if (state.equals("running")) {
+				if (instance.getImageId().equals("ami-b719e4d7") &&  state.equals("running")) {
 					if (servers.get(instance.getInstanceId()) == null) {
 						servers.put(instance.getInstanceId(), new Server(instance));
 					}
