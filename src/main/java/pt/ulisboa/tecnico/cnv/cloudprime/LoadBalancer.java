@@ -7,10 +7,16 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class LoadBalancer extends WebServer {
 	final static int LB_ENDPOINT_PORT = 80;
 	final static long UNKNOWN_LOAD = -1;
+	final static long FAT_LOAD = 100000000;
+
+	AtomicLong pendingLoad = new AtomicLong(0);
+	AtomicInteger pendingFatRequests = new AtomicInteger(0);
 
 	int choice = 0;
 
@@ -26,7 +32,29 @@ public class LoadBalancer extends WebServer {
 
 	@Override
 	String processRequest(String query) {
-		Server server = selectServer(query, getLoad(query));
+		long requestLoad = getLoad(query);
+		pendingLoad.addAndGet(requestLoad);
+		if (requestLoad > FAT_LOAD) {
+			System.err.println("FAT");
+			pendingFatRequests.incrementAndGet();
+		} else {
+			System.err.println("NOT FAT");
+			// Fat Requests go in first
+			do {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					System.exit(-1);
+				}
+			} while (pendingFatRequests.get() > 0);
+		}
+		Server server = selectServer(query, requestLoad);
+		pendingLoad.addAndGet(-requestLoad);
+		if (requestLoad > FAT_LOAD) {
+			pendingFatRequests.decrementAndGet();
+		}
+		// TODO: if server is null, launch & wait
 		String serverIp = server.getInstanceIpAddress();
 		String urlString = "http://" + serverIp + ":8000/f.html?" + query;
 		String res = httpGet(urlString);
