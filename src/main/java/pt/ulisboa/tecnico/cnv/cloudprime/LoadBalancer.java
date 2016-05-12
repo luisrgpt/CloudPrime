@@ -6,11 +6,11 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class LoadBalancer extends WebServer {
 	final static int LB_ENDPOINT_PORT = 80;
+	final static long UNKNOWN_LOAD = -1;
 
 	int choice = 0;
 
@@ -26,35 +26,45 @@ public class LoadBalancer extends WebServer {
 
 	@Override
 	String processRequest(String query) {
-		Server server = selectServer(query);
+		Server server = selectServer(query, getLoad(query));
 		String serverIp = server.getInstanceIpAddress();
 		String urlString = "http://" + serverIp + ":8000/f.html?" + query;
 		String res = httpGet(urlString);
-		// FIXME: prototype. This should be addresses by "requestId" ???
-		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
-		if (instructionTypeCounter != null) {
-			long load = instructionTypeCounter[0] + Long.MAX_VALUE; // FIXME: use metrics formula
-			server.removeLoad(load);
-		}
+		server.removeLoad(getLoad(query)); // FIXME: prototype. This should be
+											// addressed by "requestId" ???
 		return res;
 	}
 
-	private synchronized Server selectServer(String query) {
+	private long getLoad(String query) {
+		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
+		long load;
+		if (instructionTypeCounter == null) {
+			load = UNKNOWN_LOAD;
+		} else {
+			load = instructionTypeCounter[0] + Long.MAX_VALUE; // FIXME: use
+																// metrics
+																// formula
+		}
+		return load;
+	}
+
+	private synchronized Server selectServer(String query, long load) {
 		// TODO: if there is no server, retry after some delay
 		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
 		if (instructionTypeCounter == null) {
-			// if there are no metrics associated to this request, use round robin
+			// if there are no metrics associated to this request, use round
+			// robin
 			List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
 			return serverList.get(choice++ % serverList.size());
 		} else {
-			//////// FIXME: prototype: select the less loaded server ////////////
-			long load = instructionTypeCounter[0] + Long.MAX_VALUE; // FIXME: use metrics formula
+			//////// FIXME: prototype: selects always the less loaded server
 			List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
 			long minLoad = Long.MAX_VALUE;
 			Server choice = null;
-			// TODO: Check if there is a server matching the requirements and launch one otherwise. Then wait for it.
+			// TODO: Check if there is a server matching the requirements and
+			// launch one otherwise. Then wait for it.
 			for (Server s : serverList) {
-				if(s.getTotalLoad() < minLoad) {
+				if (s.getTotalLoad() < minLoad) {
 					minLoad = s.getTotalLoad();
 					choice = s;
 				}
@@ -66,7 +76,7 @@ public class LoadBalancer extends WebServer {
 			System.out.println("</Choosing server>");
 			choice.addLoad(load);
 			return choice;
-			//////// FIXME: (END) prototype: select the less loaded server ////////////
+			//////// FIXME: (END) prototype: select the less loaded server
 		}
 	}
 
