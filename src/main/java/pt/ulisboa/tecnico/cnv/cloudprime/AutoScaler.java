@@ -47,7 +47,7 @@ public final class AutoScaler {
 	protected void makeScalingDecision() {
 		// TODO: make real decisions...
 		boolean scalingUp = false;
-		boolean scalingDown = !scalingUp;
+		boolean scalingDown = false;
 		String instanceIP = "";// ips.get(0);
 
 		if (scalingUp && scalingDown) {

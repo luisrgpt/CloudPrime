@@ -6,7 +6,7 @@ public final class Server {
 	private Instance instance;
 	private int nReceivedChecks;
 	private int nTimeoutChecks;
-	private int totalLoad;
+	private long totalLoad;
 	private boolean inGracePeriod;
 	private boolean suspected; // TODO: not being used for now
 
@@ -14,6 +14,7 @@ public final class Server {
 		super();
 		this.instance = instance;
 		nReceivedChecks = nTimeoutChecks = 0;
+		totalLoad = 0;
 		inGracePeriod = true;
 	}
 
@@ -25,12 +26,19 @@ public final class Server {
 		return instance.getPublicIpAddress();
 	}
 	
-	public synchronized int getTotalLoad() {
+	public synchronized long getTotalLoad() {
+		// TODO: get from DB
 		return totalLoad;
 	}
 
-	public synchronized void setTotalLoad(int totalLoad) {
-		this.totalLoad = totalLoad;
+	public synchronized void addLoad(long offset) {
+		// TODO: update DB for fault tolerance and updates by worker
+		totalLoad += offset;
+	}
+
+	public synchronized void removeLoad(long offset) {
+		// TODO: update DB for fault tolerance and updates by worker
+		totalLoad -= offset;
 	}
 
 	/**

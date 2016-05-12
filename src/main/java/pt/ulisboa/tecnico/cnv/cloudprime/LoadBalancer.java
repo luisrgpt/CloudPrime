@@ -6,6 +6,7 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class LoadBalancer extends WebServer {
@@ -25,21 +26,47 @@ public class LoadBalancer extends WebServer {
 
 	@Override
 	String processRequest(String query) {
-		String urlString = "http://" + selectServer(query) + ":8000/f.html?" + query;
-		return httpGet(urlString);
+		Server server = selectServer(query);
+		String serverIp = server.getInstanceIpAddress();
+		String urlString = "http://" + serverIp + ":8000/f.html?" + query;
+		String res = httpGet(urlString);
+		// FIXME: prototype. This should be addresses by "requestId" ???
+		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
+		if (instructionTypeCounter != null) {
+			long load = instructionTypeCounter[0] + Long.MAX_VALUE; // FIXME: use metrics formula
+			server.removeLoad(load);
+		}
+		return res;
 	}
 
-	private String selectServer(String query) {
+	private synchronized Server selectServer(String query) {
 		// TODO: if there is no server, retry after some delay
 		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
 		if (instructionTypeCounter == null) {
-			// round robin
+			// if there are no metrics associated to this request, use round robin
 			List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
-			return serverList.get(choice++ % serverList.size()).getInstanceIpAddress();
+			return serverList.get(choice++ % serverList.size());
 		} else {
-			// TODO: implement better choice. For now it's round robin
+			//////// FIXME: prototype: select the less loaded server ////////////
+			long load = instructionTypeCounter[0] + Long.MAX_VALUE; // FIXME: use metrics formula
 			List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
-			return serverList.get(choice++ % serverList.size()).getInstanceIpAddress();
+			long minLoad = Long.MAX_VALUE;
+			Server choice = null;
+			// TODO: Check if there is a server matching the requirements and launch one otherwise. Then wait for it.
+			for (Server s : serverList) {
+				if(s.getTotalLoad() < minLoad) {
+					minLoad = s.getTotalLoad();
+					choice = s;
+				}
+			}
+			System.out.println("<Choosing server>");
+			System.out.println("  Request with load: " + load);
+			System.out.println("  ID:                " + choice.getInstanceId());
+			System.out.println("  Server load:       " + choice.getTotalLoad());
+			System.out.println("</Choosing server>");
+			choice.addLoad(load);
+			return choice;
+			//////// FIXME: (END) prototype: select the less loaded server ////////////
 		}
 	}
 
