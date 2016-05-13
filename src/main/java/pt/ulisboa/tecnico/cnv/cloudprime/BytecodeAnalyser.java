@@ -39,7 +39,7 @@ public class BytecodeAnalyser {
 				Routine routine = (Routine) enumeration.nextElement();
 
 				if (routine.getMethodName().equals("getResponse")) {
-					routine.addAfter(CLASSNAME, "storeMetric", new Integer(0));
+					routine.addAfter(CLASSNAME, "storeMetric", new Integer(1));
 					routine.addBefore(CLASSNAME, "addThreadMetric", new Integer(0));
 				}
 
@@ -104,6 +104,36 @@ public class BytecodeAnalyser {
 
 	public static synchronized void addThreadMetric(int increment) {
 		_instructionTypeCounter.put(Thread.currentThread().getId(), new Long(Long.MIN_VALUE));
+		new TimerThread(Thread.currentThread().getId()).run();
+	}
+	
+	private static class TimerThread implements Runnable {
+		
+		private Long _id;
+		
+		TimerThread(Long id) {
+			_id = id;
+		}
+		
+		@Override
+		public void run() {
+			try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+			try {
+				DynamoDB.addMetric(_values.get(_id), _instructionTypeCounter.get(_id), false);
+			} catch (Exception e) {
+				System.out.println("Value " + _values.get(_id) + " already final.");
+				return;
+			}
+			
+			new TimerThread(_id).run();
+		}
 	}
 
 	public static synchronized void incrementMetric(int increment) {
@@ -111,9 +141,34 @@ public class BytecodeAnalyser {
 		instructionTypeCounter += increment;
 		_instructionTypeCounter.put(Thread.currentThread().getId(), instructionTypeCounter);
 	}
+	
+	private static synchronized void storeMetric(Integer isFinal) {
+		new DynamoDBThread(
+				_values.get(Thread.currentThread().getId()),
+				_instructionTypeCounter.get(Thread.currentThread().getId()),
+				isFinal).run();
+	}
+	
+	private static class DynamoDBThread implements Runnable {
 
-	public static synchronized void storeMetric(int foo) {
-		DynamoDB.addMetric(_values.get(Thread.currentThread().getId()),
-				_instructionTypeCounter.get(Thread.currentThread().getId()));
+		private String _value;
+		private Long _metric;
+		private Integer _isFinal;
+		
+		DynamoDBThread(String value, Long metric, Integer isFinal) {
+			_value = value;
+			_metric = metric;
+			_isFinal = isFinal;
+		}
+		
+		@Override
+		public void run() {
+			try {
+				DynamoDB.addMetric(_value, _metric, (_isFinal == 1));
+			} catch (Exception e1) {
+				System.out.println("Value " + _value + " already final.");
+				return;
+			}
+		}
 	}
 }

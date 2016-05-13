@@ -6,7 +6,7 @@ class WorkerServer extends WebServer {
 	}
 
 	public static void main(String[] args) {
-		new WorkerServer(8000);
+		new WorkerServer(8055);
 	}
 
 	@Override

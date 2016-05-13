@@ -12,22 +12,28 @@ import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.model.AttributeAction;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
+import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ListTablesRequest;
 import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
 
 /**
@@ -48,6 +54,7 @@ class DynamoDB {
 
 	private static final String TABLE_NAME = "metric";
 	private static final String KEY_NAME = "value";
+	private static final String IS_FINAL = "isFinal";
 	static AmazonDynamoDBClient _dynamoDB;
 
 	/**
@@ -165,16 +172,30 @@ class DynamoDB {
 		return metric;
 	}
 
-	static void addMetric(String value, Long metric) {
+	static void addMetric(String value, Long metric, Boolean isFinal)
+			throws Exception {
 		try {
 			// Add an item
-			Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
-			item.put(KEY_NAME, 		new AttributeValue().withN(value));
-			item.put(TABLE_NAME, 	new AttributeValue().withN(metric.toString()));
-			
-			PutItemRequest putItemRequest = new PutItemRequest(TABLE_NAME, item);
-			_dynamoDB.putItem(putItemRequest);
-			System.out.println("[Stored] value: " + value + " metric: " + metric.toString());
+			UpdateItemRequest updateItemRequest = new UpdateItemRequest()
+					.withTableName(TABLE_NAME)
+					.withReturnValues(ReturnValue.ALL_NEW)
+					.addKeyEntry(KEY_NAME, new AttributeValue().withN(value))
+					.addAttributeUpdatesEntry(TABLE_NAME,
+							new AttributeValueUpdate()
+								.withValue(new AttributeValue().withN(metric.toString()))
+								.withAction(AttributeAction.PUT))
+					.addAttributeUpdatesEntry(IS_FINAL,
+							new AttributeValueUpdate()
+								.withValue(new AttributeValue().withBOOL(isFinal))
+								.withAction(AttributeAction.PUT))
+					.addExpectedEntry(IS_FINAL,
+							new ExpectedAttributeValue()
+								.withValue(new AttributeValue().withBOOL(false))
+								.withComparisonOperator(ComparisonOperator.EQ));
+			_dynamoDB.updateItem(updateItemRequest);
+			System.out.println("[Stored] value: " + value + " metric: " + metric.toString() + " is final? " + isFinal.toString());
+		} catch (ConditionalCheckFailedException exception) {
+			throw new Exception();
 		} catch (AmazonServiceException ase) {
 			System.err.println("Caught an AmazonServiceException, which means your request made it "
 					+ "to AWS, but was rejected with an error response for some reason.");
