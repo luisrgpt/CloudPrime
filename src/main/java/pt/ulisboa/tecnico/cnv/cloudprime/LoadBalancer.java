@@ -31,24 +31,22 @@ public class LoadBalancer extends WebServer {
 		String urlString = "http://" + serverIp + ":8000/f.html?" + query;
 		String res = httpGet(urlString);
 		// FIXME: prototype. This should be addresses by "requestId" ???
-		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
-		if (instructionTypeCounter != null) {
-			long load = instructionTypeCounter[0] + Long.MAX_VALUE; // FIXME: use metrics formula
-			server.removeLoad(load);
+		Long metric = DynamoDB.getMetric(query.substring(2));
+		if (metric != null) {
+			server.removeLoad(metric);
 		}
 		return res;
 	}
 
 	private synchronized Server selectServer(String query) {
 		// TODO: if there is no server, retry after some delay
-		Long[] instructionTypeCounter = DynamoDB.getMetrics(query.substring(2));
-		if (instructionTypeCounter == null) {
+		Long metric = DynamoDB.getMetric(query.substring(2));
+		if (metric == null) {
 			// if there are no metrics associated to this request, use round robin
 			List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
 			return serverList.get(choice++ % serverList.size());
 		} else {
 			//////// FIXME: prototype: select the less loaded server ////////////
-			long load = instructionTypeCounter[0] + Long.MAX_VALUE; // FIXME: use metrics formula
 			List<Server> serverList = new ArrayList<>(ServerGroup.getServers().values());
 			long minLoad = Long.MAX_VALUE;
 			Server choice = null;
@@ -60,11 +58,11 @@ public class LoadBalancer extends WebServer {
 				}
 			}
 			System.out.println("<Choosing server>");
-			System.out.println("  Request with load: " + load);
+			System.out.println("  Request with load: " + metric);
 			System.out.println("  ID:                " + choice.getInstanceId());
 			System.out.println("  Server load:       " + choice.getTotalLoad());
 			System.out.println("</Choosing server>");
-			choice.addLoad(load);
+			choice.addLoad(metric);
 			return choice;
 			//////// FIXME: (END) prototype: select the less loaded server ////////////
 		}

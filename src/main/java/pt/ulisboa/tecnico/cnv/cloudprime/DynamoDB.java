@@ -46,7 +46,7 @@ class DynamoDB {
 	 * credentials file in your source directory.
 	 */
 
-	private static final String TABLE_NAME = "metrics";
+	private static final String TABLE_NAME = "metric";
 	private static final String KEY_NAME = "value";
 	static AmazonDynamoDBClient _dynamoDB;
 
@@ -137,7 +137,7 @@ class DynamoDB {
 		System.out.println("Table " + TABLE_NAME + " is ACTIVE");
 	}
 
-	static Long[] getMetrics(String value)
+	static Long getMetric(String value)
 			throws AmazonServiceException, AmazonClientException {
 		// Scan items for movies with a year attribute greater than 1985
 		HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
@@ -154,31 +154,27 @@ class DynamoDB {
 			return null;
 		}
 		
-		String[] encodedMetrics = items.get(0)
+		System.out.println(items.get(0)
 				.get(TABLE_NAME)
-				.getS()
-				.replace("[", "")
-				.replace("]", "")
-				.split(", ");
-		int size = 4;
-		Long[] metrics = new Long[size];
-		for(int index = 0; index < size; ++index) {
-			metrics[index] = new Long(Long.parseLong(encodedMetrics[index]));
-		}
+				.getN());
 		
-		return metrics;
+		Long metric = new Long(items.get(0)
+				.get(TABLE_NAME)
+				.getN());
+		
+		return metric;
 	}
 
-	static void addMetrics(String value, Long[] longs) {
+	static void addMetric(String value, Long metric) {
 		try {
 			// Add an item
 			Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
 			item.put(KEY_NAME, 		new AttributeValue().withN(value));
-			item.put(TABLE_NAME, 	new AttributeValue().withS(Arrays.toString(longs)));
+			item.put(TABLE_NAME, 	new AttributeValue().withN(metric.toString()));
 			
 			PutItemRequest putItemRequest = new PutItemRequest(TABLE_NAME, item);
 			_dynamoDB.putItem(putItemRequest);
-			System.out.println("Stored metrics from value " + value + ".");
+			System.out.println("[Stored] value: " + value + " metric: " + metric.toString());
 		} catch (AmazonServiceException ase) {
 			System.err.println("Caught an AmazonServiceException, which means your request made it "
 					+ "to AWS, but was rejected with an error response for some reason.");
